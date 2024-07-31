@@ -5,17 +5,21 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,17 +40,34 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.hackathon_infoed.ui.theme.Hackathon_InfoedTheme
 import kotlinx.coroutines.delay
+import androidx.lifecycle.ViewModel
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.State
+
+class TemperatureViewModel : ViewModel() {
+    private val _temperature = mutableStateOf(20)
+    val temperature: State<Int> = _temperature
+
+    fun incrementTemperature() {
+        _temperature.value++
+    }
+
+    fun decrementTemperature() {
+        _temperature.value--
+    }
+}
 data class Element(val name: String, val color: Color)
 var selectedColorr : MutableState<Color> = mutableStateOf(Color.Transparent)
-
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        val temperatureViewModel: TemperatureViewModel by viewModels()
+
         setContent {
             Hackathon_InfoedTheme {
-                 selectedColorr = remember { mutableStateOf(Color.Transparent) }
+                selectedColorr = remember { mutableStateOf(Color.Transparent) }
                 var elementPositions by remember { mutableStateOf(mutableListOf<ColoredPoint>()) }
 
                 Box(modifier = Modifier.fillMaxSize()) {
@@ -56,6 +77,11 @@ class MainActivity : ComponentActivity() {
                     ElementList(elements = elements) { color ->
                         selectedColorr.value = color
                     }
+                    TemperatureControl(
+                        temperature = temperatureViewModel.temperature.value,
+                        onIncrement = { temperatureViewModel.incrementTemperature() },
+                        onDecrement = { temperatureViewModel.decrementTemperature() }
+                    )
                 }
             }
         }
@@ -103,12 +129,9 @@ data class ColoredPoint(
     val x: Float,
     val y: Float,
     var color: Color,
-    var behavior: (ColoredPoint) -> ColoredPoint = { it }
-)
-val collisionOutcomes = mapOf(
-    Pair(Color.Blue, Color.Red) to Color.DarkGray,
-    Pair(Color.Red, Color.Blue) to Color.DarkGray,
-    // Add more collision outcomes here
+    var behavior: (ColoredPoint) -> ColoredPoint? = { it },
+    val creationTime: Long? = null,
+    var collided: Boolean = false
 )
 fun detectCollision(points: List<ColoredPoint>): List<Pair<ColoredPoint, ColoredPoint>> {
     val collisions = mutableListOf<Pair<ColoredPoint, ColoredPoint>>()
@@ -125,17 +148,27 @@ fun detectCollision(points: List<ColoredPoint>): List<Pair<ColoredPoint, Colored
     }
     return collisions
 }
-
 fun handleCollision(collisions: List<Pair<ColoredPoint, ColoredPoint>>): List<ColoredPoint> {
     val updatedPoints = mutableListOf<ColoredPoint>()
+    val pointsToErase = mutableSetOf<ColoredPoint>()
+
     collisions.forEach { (point1, point2) ->
         val collisionFunction = collisionFunctions[Pair(point1.color, point2.color)]
             ?: collisionFunctions[Pair(point2.color, point1.color)]
             ?: return@forEach
-        val newPoint = collisionFunction(point1, point2)
-        updatedPoints.add(newPoint)
+        val (newPoint, shouldErase) = collisionFunction(point1, point2)
+        if (newPoint != null) {
+            updatedPoints.add(newPoint)
+        }
+        if (shouldErase) {
+            point1.collided = true
+            point2.collided = true
+            pointsToErase.add(point1)
+            pointsToErase.add(point2)
+        }
     }
-    return updatedPoints
+
+    return updatedPoints.filterNot { it in pointsToErase || it.collided }
 }
 @Composable
 fun DrawingCanvas(
@@ -148,18 +181,18 @@ fun DrawingCanvas(
 
     LaunchedEffect(Unit) {
         while (true) {
-            delay(16L) // Simulate 60 FPS
+            delay(16L)
 
             // Detect and handle collisions
             val collisions = detectCollision(currentPositions.value)
             val collisionResults = handleCollision(collisions)
-            val newPositions = currentPositions.value.map { point ->
+            val newPositions = currentPositions.value.mapNotNull { point ->
                 if (collisionResults.any { it.x == point.x && it.y == point.y }) {
                     collisionResults.first { it.x == point.x && it.y == point.y }
                 } else {
                     point.behavior(point)
                 }
-            }
+            }.filterNotNull()
 
             currentPositions.value = newPositions
             onPathChanged(newPositions)
@@ -186,6 +219,30 @@ fun DrawingCanvas(
                 Log.d("DrawingCanvas", "Drawing point at (${point.x}, ${point.y})")
                 Log.d("DrawingCanvas", "Color: ${point.color}")
                 drawCircle(color = point.color, radius = 10f, center = Offset(point.x, point.y))
+            }
+        }
+    }
+}
+@Composable
+fun TemperatureControl(temperature: Int, onIncrement: () -> Unit, onDecrement: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Button(onClick = onDecrement) {
+                Text(text = "-")
+            }
+            Text(
+                text = "$temperature°C",
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+            Button(onClick = onIncrement) {
+                Text(text = "+")
             }
         }
     }
