@@ -1,6 +1,7 @@
 package com.example.hackathon_infoed
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -19,6 +20,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,8 +36,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.hackathon_infoed.ui.theme.Hackathon_InfoedTheme
 import kotlinx.coroutines.delay
-
 data class Element(val name: String, val color: Color)
+var selectedColorr : MutableState<Color> = mutableStateOf(Color.Transparent)
+
 val elements = listOf(
     Element("Water", Color.Blue),
     Element("Fire", Color.Red),
@@ -48,15 +51,15 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             Hackathon_InfoedTheme {
-                var selectedColor by remember { mutableStateOf(Color.Transparent) }
-                var elementPositions by remember { mutableStateOf(mutableListOf<Pair<Float, Float>>()) }
+                 selectedColorr = remember { mutableStateOf(Color.Transparent) }
+                var elementPositions by remember { mutableStateOf(mutableListOf<ColoredPoint>()) }
 
                 Box(modifier = Modifier.fillMaxSize()) {
-                    DrawingCanvas(elementPositions, selectedColor) { newPositions ->
+                    DrawingCanvas(elementPositions, selectedColor = selectedColorr.value) { newPositions ->
                         elementPositions = newPositions.toMutableList()
                     }
                     ElementList(elements = elements) { color ->
-                        selectedColor = color
+                        selectedColorr.value = color
                     }
                 }
             }
@@ -101,24 +104,53 @@ fun ElementList(elements: List<Element>, onElementSelected: (Color) -> Unit) {
         }
     }
 }
+data class ColoredPoint(val x: Float, val y: Float, var color: Color)
+fun detectCollision(point1: ColoredPoint, point2: ColoredPoint): Boolean {
+    val distance = Math.sqrt(Math.pow((point1.x - point2.x).toDouble(), 2.0) + Math.pow((point1.y - point2.y).toDouble(), 2.0))
+    return distance < 20 // Assuming radius of 10 for each circle
+}
+
+fun handleCollision(point1: ColoredPoint, point2: ColoredPoint): ColoredPoint {
+    return if ((point1.color == Color.Blue && point2.color == Color.Red) || (point1.color == Color.Red && point2.color == Color.Blue)) {
+        ColoredPoint(point1.x, point1.y, Color.DarkGray)
+    } else {
+        point1
+    }
+}
+
 @Composable
 fun DrawingCanvas(
-    elementPositions: List<Pair<Float, Float>>,
-    color: Color,
-    onPathChanged: (List<Pair<Float, Float>>) -> Unit
+    elementPositions: List<ColoredPoint>,
+    selectedColor: Color,
+    onPathChanged: (List<ColoredPoint>) -> Unit
 ) {
     val currentPositions = remember { mutableStateOf(elementPositions) }
+    val culi = selectedColorr
 
     LaunchedEffect(Unit) {
         while (true) {
             delay(16L) // Simulate 60 FPS
-            val newPositions = currentPositions.value.map { (x, y) ->
-                if (y < 1000f) { // Arbitrary screen bottom limit
-                    x to y + 5f // Simulate gravity
+
+            // Detect and handle collisions
+            val newPositions = currentPositions.value.map { point ->
+                var newPoint = point
+                currentPositions.value.forEach { otherPoint ->
+                    if (point != otherPoint && detectCollision(point, otherPoint)) {
+                        newPoint = handleCollision(point, otherPoint)
+                    }
+                }
+                newPoint
+            }.map { point ->
+                // Update positions with gravity or flying effect
+                if (point.color == Color.DarkGray) {
+                    point.copy(y = point.y - 5f) // Fly upwards
+                } else if (point.y < 1000f) { // Arbitrary screen bottom limit
+                    point.copy(y = point.y + 5f) // Simulate gravity
                 } else {
-                    x to y
+                    point
                 }
             }
+
             currentPositions.value = newPositions
             onPathChanged(newPositions)
         }
@@ -130,15 +162,19 @@ fun DrawingCanvas(
             .pointerInput(Unit) {
                 detectDragGestures { change, _ ->
                     change.consume()
-                    val newPoint = change.position.x to change.position.y
+                    val newPoint = ColoredPoint(change.position.x, change.position.y, selectedColor)
+                    Log.d("kilo", "selectedColor: $culi")
+                    newPoint.color = culi.value
                     currentPositions.value = currentPositions.value + newPoint
                     onPathChanged(currentPositions.value)
                 }
             }
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            currentPositions.value.forEach { (x, y) ->
-                drawCircle(color, radius = 10f, center = Offset(x, y))
+            currentPositions.value.forEach { point ->
+                Log.d("DrawingCanvas", "Drawing point at (${point.x}, ${point.y})")
+                Log.d("DrawingCanvas", "Color: ${point.color}")
+                drawCircle(color = point.color, radius = 10f, center = Offset(point.x, point.y))
             }
         }
     }
