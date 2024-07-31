@@ -39,12 +39,7 @@ import kotlinx.coroutines.delay
 data class Element(val name: String, val color: Color)
 var selectedColorr : MutableState<Color> = mutableStateOf(Color.Transparent)
 
-val elements = listOf(
-    Element("Water", Color.Blue),
-    Element("Fire", Color.Red),
-    Element("Earth", Color.Gray),
-    Element("Air", Color.Gray)
-)
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -104,20 +99,44 @@ fun ElementList(elements: List<Element>, onElementSelected: (Color) -> Unit) {
         }
     }
 }
-data class ColoredPoint(val x: Float, val y: Float, var color: Color)
-fun detectCollision(point1: ColoredPoint, point2: ColoredPoint): Boolean {
-    val distance = Math.sqrt(Math.pow((point1.x - point2.x).toDouble(), 2.0) + Math.pow((point1.y - point2.y).toDouble(), 2.0))
-    return distance < 20 // Assuming radius of 10 for each circle
-}
+data class ColoredPoint(
+    val x: Float,
+    val y: Float,
+    var color: Color,
+    var behavior: (ColoredPoint) -> ColoredPoint = { it }
+)
+val collisionOutcomes = mapOf(
+    Pair(Color.Blue, Color.Red) to Color.DarkGray,
+    Pair(Color.Red, Color.Blue) to Color.DarkGray,
+    // Add more collision outcomes here
+)
+fun detectCollision(points: List<ColoredPoint>): List<Pair<ColoredPoint, ColoredPoint>> {
+    val collisions = mutableListOf<Pair<ColoredPoint, ColoredPoint>>()
+    for (i in points.indices) {
+        for (j in i + 1 until points.size) {
+            val point1 = points[i]
+            val point2 = points[j]
+            val distance = Math.sqrt(Math.pow((point1.x - point2.x).toDouble(), 2.0) + Math.pow((point1.y - point2.y).toDouble(), 2.0))
+            if (distance < 20) { // Assuming radius of 10 for each circle
+                collisions.add(Pair(point1, point2))
 
-fun handleCollision(point1: ColoredPoint, point2: ColoredPoint): ColoredPoint {
-    return if ((point1.color == Color.Blue && point2.color == Color.Red) || (point1.color == Color.Red && point2.color == Color.Blue)) {
-        ColoredPoint(point1.x, point1.y, Color.DarkGray)
-    } else {
-        point1
+            }
+        }
     }
+    return collisions
 }
 
+fun handleCollision(collisions: List<Pair<ColoredPoint, ColoredPoint>>): List<ColoredPoint> {
+    val updatedPoints = mutableListOf<ColoredPoint>()
+    collisions.forEach { (point1, point2) ->
+        val collisionFunction = collisionFunctions[Pair(point1.color, point2.color)]
+            ?: collisionFunctions[Pair(point2.color, point1.color)]
+            ?: return@forEach
+        val newPoint = collisionFunction(point1, point2)
+        updatedPoints.add(newPoint)
+    }
+    return updatedPoints
+}
 @Composable
 fun DrawingCanvas(
     elementPositions: List<ColoredPoint>,
@@ -132,22 +151,13 @@ fun DrawingCanvas(
             delay(16L) // Simulate 60 FPS
 
             // Detect and handle collisions
+            val collisions = detectCollision(currentPositions.value)
+            val collisionResults = handleCollision(collisions)
             val newPositions = currentPositions.value.map { point ->
-                var newPoint = point
-                currentPositions.value.forEach { otherPoint ->
-                    if (point != otherPoint && detectCollision(point, otherPoint)) {
-                        newPoint = handleCollision(point, otherPoint)
-                    }
-                }
-                newPoint
-            }.map { point ->
-                // Update positions with gravity or flying effect
-                if (point.color == Color.DarkGray) {
-                    point.copy(y = point.y - 5f) // Fly upwards
-                } else if (point.y < 1000f) { // Arbitrary screen bottom limit
-                    point.copy(y = point.y + 5f) // Simulate gravity
+                if (collisionResults.any { it.x == point.x && it.y == point.y }) {
+                    collisionResults.first { it.x == point.x && it.y == point.y }
                 } else {
-                    point
+                    point.behavior(point)
                 }
             }
 
@@ -162,9 +172,10 @@ fun DrawingCanvas(
             .pointerInput(Unit) {
                 detectDragGestures { change, _ ->
                     change.consume()
-                    val newPoint = ColoredPoint(change.position.x, change.position.y, selectedColor)
+                    val newPoint = ColoredPoint(change.position.x, change.position.y, selectedColor, behaviors[selectedColor] ?: { it })
                     Log.d("kilo", "selectedColor: $culi")
                     newPoint.color = culi.value
+                    newPoint.behavior = behaviors[culi.value] ?: { it }
                     currentPositions.value = currentPositions.value + newPoint
                     onPathChanged(currentPositions.value)
                 }
