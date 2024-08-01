@@ -603,3 +603,18 @@ val collisionFunctions = mapOf<Pair<Color, Color>, (ColoredPoint, ColoredPoint, 
     }
 
 )
+val reactionVideos = mapOf(
+    "Steam" to R.raw.apafoc,
+    "Mud" to R.raw.earthwater,
+    "Thermal Decomposition" to R.raw.piatrafoc,
+    "Burning wood" to R.raw.lemnfoc,
+    "Metal melting" to R.raw.focmetal,
+    "Fire expansion" to R.raw.piatrafoc, //TODO PUNE-L PE CEZAR SA FACA VIDEO OXIGEN FOC
+    "Explosion" to R.raw.gunpowderfire,
+    "Mudification with Ash" to R.raw.ashsteam,
+    "Rapid cooling of lava" to R.raw.icelava,
+    "Freezing" to R.raw.earthwater, //TODO PUNE-L PE CEZAR SA FACA VIDEO FREEZING-ul
+    "Making water" to R.raw.hydrogenfire, //TODO PUNE-l PE CEZAR SA IA VIDEOCLIP DESPRE OXYGEN + APA
+    "combustion" to R.raw.hydrogenfire
+    // Add other reactions and their corresponding video files here
+)

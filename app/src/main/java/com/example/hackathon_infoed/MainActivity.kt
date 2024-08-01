@@ -1,5 +1,6 @@
 package com.example.hackathon_infoed
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -45,6 +46,7 @@ import kotlinx.coroutines.delay
 import androidx.lifecycle.ViewModel
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.State
+import androidx.compose.ui.platform.LocalContext
 
 class TemperatureViewModel : ViewModel() {
     private val _temperature = mutableStateOf(20)
@@ -293,13 +295,18 @@ fun SteamCreationDialog(showDialog: Boolean, onDismiss: () -> Unit) {
 @Composable
 fun ReactionsAchievedDialog(showDialog: Boolean, reactions: List<String>, onDismiss: () -> Unit) {
     if (showDialog) {
+        val context  = LocalContext.current
         AlertDialog(
             onDismissRequest = onDismiss,
             title = { Text(text = "Reactions Achieved") },
             text = {
                 Column {
                     reactions.forEach { reaction ->
-                        Text(text = reaction)
+                        Text(text = reaction, modifier = Modifier.padding(4.dp).clickable {
+                            val intent = Intent(context, show_data::class.java)
+                            intent.putExtra("title", reaction)
+                            context.startActivity(intent)
+                        })
                     }
                 }
             },
