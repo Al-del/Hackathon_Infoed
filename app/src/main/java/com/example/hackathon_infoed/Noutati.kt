@@ -63,7 +63,7 @@ fun NewsScreen(onBackClick: () -> Unit,photo_path:Int,title:String,description:S
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("News", modifier = Modifier.offset(x = 20.dp)) },
+                title = { Text("Details", modifier = Modifier.offset(x = 20.dp)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Text(text ="<")

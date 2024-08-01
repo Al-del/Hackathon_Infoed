@@ -115,7 +115,7 @@ class MainActivity : ComponentActivity() {
                         .align(Alignment.TopEnd)
                         .padding(horizontal = 16.dp, vertical = 8.dp)
                         .offset(y = 30.dp)
-                        .requiredHeight(50.dp)
+                        .requiredHeight(70.dp)
                         .requiredWidth(150.dp),
                 ) {
                     Text("Show Reactions", fontSize = 14.sp, color = Color.White)
@@ -187,7 +187,7 @@ fun detectCollision(points: List<ColoredPoint>): List<Pair<ColoredPoint, Colored
             val point1 = points[i]
             val point2 = points[j]
             val distance = Math.sqrt(Math.pow((point1.x - point2.x).toDouble(), 2.0) + Math.pow((point1.y - point2.y).toDouble(), 2.0))
-            if (distance < 20) { // Assuming radius of 10 for each circle
+            if (distance < 15) { // Assuming radius of 10 for each circle
                 collisions.add(Pair(point1, point2))
 
             }
@@ -203,21 +203,53 @@ fun handleCollision(
     val pointsToErase = mutableSetOf<ColoredPoint>()
 
     collisions.forEach { (point1, point2) ->
-        val collisionFunction = collisionFunctions[Pair(point1.color, point2.color)]
-            ?: collisionFunctions[Pair(point2.color, point1.color)]
-            ?: return@forEach
+        if(point1.color == point2.color){
+            point1.copy(y = point1.y - 1f, x = point1.x + 2f)
+            updatedPoints.add(point1)
 
-        val (newPoint, shouldErase) = collisionFunction(point1, point2, temperatureViewModel)
-        if (newPoint != null) {
-            updatedPoints.add(newPoint)
-        }
-        if (shouldErase) {
-            point1.collided = true
-            point2.collided = true
-            pointsToErase.add(point1)
-            pointsToErase.add(point2)
-        }
+        }else {
+            val collisionFunction = collisionFunctions[Pair(point1.color, point2.color)]
+                ?: collisionFunctions[Pair(point2.color, point1.color)]
+                ?: return@forEach
 
+            val (newPoint, shouldErase) = collisionFunction(point1, point2, temperatureViewModel)
+            if (newPoint != null) {
+                updatedPoints.add(newPoint)
+            }
+            if (shouldErase) {
+                point1.collided = true
+                point2.collided = true
+                pointsToErase.add(point1)
+                pointsToErase.add(point2)
+            }
+
+            // Calculate the normal vector
+            val normal = Offset(point2.x - point1.x, point2.y - point1.y)
+            val distance = Math.sqrt((normal.x * normal.x + normal.y * normal.y).toDouble()).toFloat()
+            val unitNormal = Offset(normal.x / distance, normal.y / distance)
+
+            // Calculate relative velocity
+            val relativeVelocity = Offset(point2.vx - point1.vx, point2.vy - point1.vy)
+            val velocityAlongNormal = relativeVelocity.x * unitNormal.x + relativeVelocity.y * unitNormal.y
+
+            // Calculate impulse scalar
+            val impulse = (-(1 + 0.1f) * velocityAlongNormal) / 2
+
+            // Update velocities
+            point1.vx -= impulse * unitNormal.x
+            point1.vy -= impulse * unitNormal.y
+            point2.vx += impulse * unitNormal.x
+            point2.vy += impulse * unitNormal.y
+
+            // Update positions
+            point1.x += point1.vx
+            point1.y += point1.vy
+            point2.x += point2.vx
+            point2.y += point2.vy
+
+            updatedPoints.add(point1)
+            updatedPoints.add(point2)
+        }
     }
 
     return updatedPoints.filterNot { it in pointsToErase || it.collided }
