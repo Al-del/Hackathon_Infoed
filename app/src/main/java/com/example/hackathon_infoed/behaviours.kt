@@ -29,7 +29,7 @@ val elements = listOf(
     Element("⛰", Color(0xff2F4F4F)),
     Element("\uD83C\uDF11", Color(0xff36454F)),
 
-)
+    )
 
 const val CEILING_HEIGHT = 200f
 const val TRANSFORM_DELAY = 9000L // 20 seconds in milliseconds
@@ -136,7 +136,7 @@ val specificColors = listOf(
     Color(0xff808080),
     Color(0xff80808f)
 
-    )
+)
 val reactions_achieved: MutableList<String> = mutableListOf()
 val colorMap: MutableMap<Color, Boolean> = specificColors.associateWith { false }.toMutableMap()
 val collisionFunctions = mapOf<Pair<Color, Color>, (ColoredPoint, ColoredPoint, TemperatureViewModel) -> Pair<ColoredPoint?, Boolean>>(
@@ -146,14 +146,14 @@ val collisionFunctions = mapOf<Pair<Color, Color>, (ColoredPoint, ColoredPoint, 
         val currentTemperature = temperatureViewModel.getTemperature()
         Log.d("Collision", "Fire and Water collided. Current temperature: $currentTemperature°C")
         Pair(ColoredPoint(point1.x, point1.y, Color(0xff81a5ba), behaviors[Color(0xff81a5ba)] ?: {
-            point -> // Gas
+                point -> // Gas
             if (point.collided) null else {
                 if(colorMap[Color(0xff81a5ba)] == false) {
                     colorMap[Color(0xff81a5ba)] = true
                     //Add Steam to the list reactions_achieved
                     reactions_achieved.add("Steam")
                     Log.d("kilo", reactions_achieved.toString())
-                  Log.d("kilo","slay")
+                    Log.d("kilo","slay")
                 }
                 val currentTime = System.currentTimeMillis()
                 val creationTime = point.creationTime ?: currentTime
@@ -692,16 +692,16 @@ val reactionVideos = mapOf(
     "Thermal Decomposition" to R.raw.piatrafoc,
     "Burning wood" to R.raw.lemnfoc,
     "Metal melting" to R.raw.focmetal,
-    "Fire expansion" to R.raw.piatrafoc, //TODO PUNE-L PE CEZAR SA FACA VIDEO OXIGEN FOC
+    "Fire expansion" to R.raw.piatrafoc,
     "Explosion" to R.raw.gunpowderfire,
     "Mudification with Ash" to R.raw.ashsteam,
     "Rapid cooling of lava" to R.raw.icelava,
-    "Freezing" to R.raw.earthwater, //TODO PUNE-L PE CEZAR SA FACA VIDEO FREEZING-ul
-    "Making water" to R.raw.hydrogenfire, //TODO PUNE-l PE CEZAR SA IA VIDEOCLIP DESPRE OXYGEN + APA
+    "Freezing" to R.raw.aparece,
+    "Making water" to R.raw.oxygenfire,
     "combustion" to R.raw.hydrogenfire,
-    "Calcium oxidation" to R.raw.ashsteam, //TODO Pune-l pe Cezar sa faca video cu calcium oxidation
-    "Obsidian" to R.raw.coalfire, //TODO pune-l pe Cezar sa puna video de cum se obtine obsidian
-    "Lava cooling" to R.raw.piatrafoc,//TODO Pune-l pe Cezar sa puna video de piatra + fox
+    "Calcium oxidation" to R.raw.apacalciu,
+    "Obsidian" to R.raw.apalava,
+    "Lava cooling" to R.raw.piatrafoc,
     "Fire melting ice" to R.raw.fireice
 )
 val Safety_instructions = mapOf(

@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -65,7 +66,7 @@ fun NewsScreen(onBackClick: () -> Unit,photo_path:Int,title:String,description:S
                 title = { Text("News", modifier = Modifier.offset(x = 20.dp)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-Text(text ="<")
+                        Text(text ="<")
                     }
                 }
             )
@@ -84,6 +85,9 @@ Text(text ="<")
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(200.dp)
+                    .clickable {
+
+                    }
             )
 
             // Title
