@@ -15,10 +15,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
@@ -97,7 +99,7 @@ class MainActivity : ComponentActivity() {
                 )
                 Button(
                     onClick = { showDialog.value = true },
-                    modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)
+                    modifier = Modifier.align(Alignment.TopEnd).padding(16.dp).requiredHeight(60.dp).requiredWidth(180.dp)
                 ) {
                     Text("Show Reactions Achieved")
                 }
@@ -277,24 +279,12 @@ fun TemperatureControl(temperature: Int, onIncrement: () -> Unit, onDecrement: (
     }
 }
 // Define the SteamCreationDialog composable function
-@Composable
-fun SteamCreationDialog(showDialog: Boolean, onDismiss: () -> Unit) {
-    if (showDialog) {
-        AlertDialog(
-            onDismissRequest = onDismiss,
-            title = { Text(text = "Steam Created") },
-            text = { Text(text = "Water and Fire have combined to create Steam!") },
-            confirmButton = {
-                Button(onClick = onDismiss) {
-                    Text("OK")
-                }
-            }
-        )
-    }
-}
+
 @Composable
 fun ReactionsAchievedDialog(showDialog: Boolean, reactions: List<String>, onDismiss: () -> Unit) {
     if (showDialog) {
+        //Make the list to have unique elements
+        reactions.distinct()
         val context  = LocalContext.current
         AlertDialog(
             onDismissRequest = onDismiss,

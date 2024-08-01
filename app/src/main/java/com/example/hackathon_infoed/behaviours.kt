@@ -109,7 +109,10 @@ val behaviors = mapOf<Color, (ColoredPoint) -> ColoredPoint?>(
     },
     Color(0xff00FFFF) to { point -> // Frozen Water behavior
         if (point.collided) null else if (point.y <= 2000f && point.y > CEILING_HEIGHT) point.copy(y = point.y + 0f) else point
-    }
+    },
+    Color(0xff4B0082) to { point -> if (point.collided) null else point }, // Obsidian behavior
+    Color(0xff808080) to { point -> if (point.collided) null else point } // Rock behavior
+
 
 )
 val specificColors = listOf(
@@ -128,7 +131,10 @@ val specificColors = listOf(
     Color(0xff00FFFF),
     Color(0xffADD8E6),
     Color(0xffF0FFFE),
-Color(0xffF0FFFD)
+    Color(0xffF0FFFD),
+    Color(0xff4B0082),
+    Color(0xff808080),
+    Color(0xff80808f)
 
     )
 val reactions_achieved: MutableList<String> = mutableListOf()
@@ -600,6 +606,87 @@ val collisionFunctions = mapOf<Pair<Color, Color>, (ColoredPoint, ColoredPoint, 
         temperatureViewModel.decrementTemperature() // Decrease temperature
         Log.d("Collision", "Fire and Hydrogen collided to create Water.")
         Pair(ColoredPoint(point1.x, point1.y, Color.Blue, behaviors[Color.Blue] ?: { it }), true)
+    },
+    Pair(Color(0xffFF4500), Color(0xff61340b)) to { point1, point2, temperatureViewModel -> // Lava + Earth = Obsidian
+        point1.collided = true
+        point2.collided = true
+        //Increase temperature
+        temperatureViewModel.incrementTemperature()
+        if(colorMap[Color(0xff4B0082)] == false) {
+            colorMap[Color(0xff4B0082)] = true
+            //Add Steam to the list reactions_achieved
+            reactions_achieved.add("Obsidian")
+            Log.d("kilo", reactions_achieved.toString())
+            Log.d("kilo","slay")
+        }
+        Log.d("Collision", "Lava and Earth collided to create Obsidian.")
+        Pair(ColoredPoint(point1.x, point1.y, Color(0xff4B0082), behaviors[Color(0xff4B0082)] ?: { it }), true)
+    },
+    Pair(Color(0xff61340b), Color(0xffFF4500)) to { point1, point2, temperatureViewModel -> // Earth + Lava = Obsidian
+        point1.collided = true
+        point2.collided = true
+        temperatureViewModel.incrementTemperature()
+        if(colorMap[Color(0xff4B0082)] == false) {
+            colorMap[Color(0xff4B0082)] = true
+            //Add Steam to the list reactions_achieved
+            reactions_achieved.add("Obsidian")
+            Log.d("kilo", reactions_achieved.toString())
+            Log.d("kilo","slay")
+        }
+        Log.d("Collision", "Earth and Lava collided to create Obsidian.")
+        Pair(ColoredPoint(point1.x, point1.y, Color(0xff4B0082), behaviors[Color(0xff4B0082)] ?: { it }), true)
+    },
+    Pair(Color.Red, Color(0xff61340b)) to { point1, point2, temperatureViewModel -> // Fire + Earth = Rock
+        point1.collided = true
+        point2.collided = true
+        if(colorMap[Color(0xff808080)] == false) {
+            colorMap[Color(0xff808080)] = true
+            //Add Steam to the list reactions_achieved
+            reactions_achieved.add("Lava cooling")
+            Log.d("kilo", reactions_achieved.toString())
+            Log.d("kilo","slay")
+        }
+        Log.d("Collision", "Fire and Earth collided to create Rock.")
+        Pair(ColoredPoint(point1.x, point1.y, Color(0xff808080), behaviors[Color(0xff808080)] ?: { it }), true)
+    },
+    Pair(Color(0xff61340b), Color.Red) to { point1, point2, temperatureViewModel -> // Earth + Fire = Rock
+        point1.collided = true
+        point2.collided = true
+        if(colorMap[Color(0xff808080)] == false) {
+            colorMap[Color(0xff808080)] = true
+            //Add Steam to the list reactions_achieved
+            reactions_achieved.add("Lava cooling")
+            Log.d("kilo", reactions_achieved.toString())
+            Log.d("kilo","slay")
+        }
+        Log.d("Collision", "Earth and Fire collided to create Rock.")
+        Pair(ColoredPoint(point1.x, point1.y, Color(0xff808080), behaviors[Color(0xff808080)] ?: { it }), true)
+    },
+    Pair(Color.Red, Color.Cyan) to { point1, point2, temperatureViewModel -> // Fire + Ice = Water
+        point1.collided = true
+        point2.collided = true
+        if(colorMap[Color(0xff80808f)] == false) {
+            colorMap[Color(0xff80808f)] = true
+            //Add Steam to the list reactions_achieved
+            reactions_achieved.add("Fire melting ice")
+            Log.d("kilo", reactions_achieved.toString())
+            Log.d("kilo","slay")
+        }
+        Log.d("Collision", "Fire and Ice collided to create Water.")
+        Pair(ColoredPoint(point1.x, point1.y, Color.Blue, behaviors[Color.Blue] ?: { it }), true)
+    },
+    Pair(Color.Cyan, Color.Red) to { point1, point2, temperatureViewModel -> // Ice + Fire = Water
+        point1.collided = true
+        point2.collided = true
+        if(colorMap[Color(0xff80808f)] == false) {
+            colorMap[Color(0xff80808f)] = true
+            //Add Steam to the list reactions_achieved
+            reactions_achieved.add("Fire melting ice")
+            Log.d("kilo", reactions_achieved.toString())
+            Log.d("kilo","slay")
+        }
+        Log.d("Collision", "Ice and Fire collided to create Water.")
+        Pair(ColoredPoint(point1.x, point1.y, Color.Blue, behaviors[Color.Blue] ?: { it }), true)
     }
 
 )
@@ -615,6 +702,9 @@ val reactionVideos = mapOf(
     "Rapid cooling of lava" to R.raw.icelava,
     "Freezing" to R.raw.earthwater, //TODO PUNE-L PE CEZAR SA FACA VIDEO FREEZING-ul
     "Making water" to R.raw.hydrogenfire, //TODO PUNE-l PE CEZAR SA IA VIDEOCLIP DESPRE OXYGEN + APA
-    "combustion" to R.raw.hydrogenfire
-    // Add other reactions and their corresponding video files here
+    "combustion" to R.raw.hydrogenfire,
+    "Calcium oxidation" to R.raw.ashsteam, //TODO Pune-l pe Cezar sa faca video cu calcium oxidation
+    "Obsidian" to R.raw.coalfire, //TODO pune-l pe Cezar sa puna video de cum se obtine obsidian
+    "Lava cooling" to R.raw.piatrafoc,//TODO Pune-l pe Cezar sa puna video de piatra + fox
+    "Fire melting ice" to R.raw.fireice
 )

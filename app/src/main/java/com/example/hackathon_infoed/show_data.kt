@@ -6,10 +6,12 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
+import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -29,10 +31,19 @@ class show_data : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val title = intent.getStringExtra("title")
-        setContent {
-Toast.makeText(this, title, Toast.LENGTH_SHORT).show()
-            loAD_video()
+      setContent {
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Button(onClick = { finish() }) {
+            Text("Back")
         }
+        Text(
+            text = "Description: $title",
+            modifier = Modifier.padding(vertical = 16.dp)
+        )
+        Toast.makeText(this@show_data, title, Toast.LENGTH_SHORT).show()
+        loAD_video(reactionVideos[title]!!)
+    }
+}
     }
 }
 @Composable
