@@ -14,20 +14,20 @@ import kotlin.math.truncate
 data class ElementStatus(val color: Color, var isActive: Boolean)
 
 val elements = listOf(
-    Element("Water", Color.Blue),
-    Element("Fire", Color.Red),
-    Element("Ice", Color.Cyan),
-    Element("Lava", Color(0xffFF4500)),
-    Element("Earth", Color(0xff61340b)),
-    Element("Rock", Color(0xff808080)),
-    Element("Wood", Color(0xff8B4513)),
-    Element("Metal", Color(0xffB0C4DE)),
-    Element("Smoke", Color(0xff696969)),
-    Element("Oxygen", Color(0xffADD8E6)),
-    Element("Hydrogen", Color(0xffF0FFFF)),
-    Element("Ash", Color(0xffA9A9A9)),
-    Element("Gunpowder", Color(0xff2F4F4F)),
-    Element("Coal", Color(0xff36454F)),
+    Element("\uD83D\uDCA7", Color.Blue),
+    Element("\uD83D\uDD25", Color.Red),
+    Element("\uD83E\uDDCA", Color.Cyan),
+    Element("\uD83C\uDF0B", Color(0xffFF4500)),
+    Element("\uD83C\uDF31", Color(0xff61340b)),
+    Element("\uD83E\uDEA8", Color(0xff808080)),
+    Element("\uD83E\uDEB5", Color(0xff8B4513)),
+    Element("⛓\uFE0F", Color(0xffB0C4DE)),
+    Element("\uD83D\uDCA8", Color(0xff696969)),
+    Element("\uD83C\uDD7E", Color(0xffADD8E6)),
+    Element("\uD83C\uDDED", Color(0xffF0FFFF)),
+    Element("☁", Color(0xffA9A9A9)),
+    Element("⛰", Color(0xff2F4F4F)),
+    Element("\uD83C\uDF11", Color(0xff36454F)),
 
 )
 
@@ -139,10 +139,6 @@ val specificColors = listOf(
     )
 val reactions_achieved: MutableList<String> = mutableListOf()
 val colorMap: MutableMap<Color, Boolean> = specificColors.associateWith { false }.toMutableMap()
-
-fun getBooleanForColor(color: Color): Boolean? {
-    return colorMap[color]
-}
 val collisionFunctions = mapOf<Pair<Color, Color>, (ColoredPoint, ColoredPoint, TemperatureViewModel) -> Pair<ColoredPoint?, Boolean>>(
     Pair(Color.Blue, Color.Red) to { point1, point2, temperatureViewModel -> // Water + Fire = Steam
         point1.collided = true
@@ -707,4 +703,65 @@ val reactionVideos = mapOf(
     "Obsidian" to R.raw.coalfire, //TODO pune-l pe Cezar sa puna video de cum se obtine obsidian
     "Lava cooling" to R.raw.piatrafoc,//TODO Pune-l pe Cezar sa puna video de piatra + fox
     "Fire melting ice" to R.raw.fireice
+)
+val Safety_instructions = mapOf(
+    "Steam" to "Avoid Burns: Steam can cause severe burns. Keep a safe distance and avoid direct contact.\n" +
+            "Use Protective Gear: Wear gloves and eye protection when dealing with steam.",
+    "Mud" to "Avoid Slippery Surfaces: Wet mud can be slippery; be cautious of footing to prevent falls.\n" +
+            "Hygiene: Wash hands thoroughly after handling mud to prevent the spread of bacteria.\n",
+    "Thermal Decomposition" to "Ventilation: Ensure adequate ventilation as decomposition can release gases.\n" +
+            "Avoid Inhalation: Use masks to avoid inhaling potentially harmful fumes.\n",
+    "Burning wood" to "Fire Safety: Keep a fire extinguisher nearby and maintain a safe distance.\n" +
+            "Smoke Inhalation: Avoid inhaling smoke; use a mask if necessary.",
+    "Metal melting" to "Heat Protection: Wear heat-resistant gloves and eye protection.\n" +
+            "Proper Ventilation: Melting metals can release fumes; ensure good ventilation.",
+    "Fire expansion" to "Containment: Use fire-resistant barriers to prevent the spread of fire.\n" +
+            "Avoid Flammable Materials: Keep away from flammable substances.", //TODO PUNE-L PE CEZAR SA FACA VIDEO OXIGEN FOC
+    "Explosion" to "Distance and Shielding: Maintain a safe distance and use protective shielding.\n" +
+            "Hearing Protection: Wear ear protection to prevent hearing damage.",
+    "Mudification with Ash" to "Respiratory Protection: Wear masks to avoid inhaling ash particles.\n" +
+            "Skin Protection: Use gloves to prevent skin irritation.",
+    "Rapid cooling of lava" to "Heat Protection: Use heat-resistant gloves and face shields.\n" +
+            "Avoid Contact: Do not touch the lava directly; it remains extremely hot.",
+    "Freezing" to "Cold Protection: Wear gloves and appropriate clothing to avoid frostbite.\n" +
+            "Safe Handling: Use tongs or other tools to handle extremely cold objects.",
+    "Making water" to "Explosion Risk: Handle hydrogen with care as it is highly flammable.\n" +
+            "Proper Ventilation: Ensure adequate ventilation to avoid gas buildup.",
+    "combustion" to "Fire Safety: Keep flammable materials away and have a fire extinguisher nearby.\n" +
+            "Avoid Inhalation: Combustion can produce harmful gases; use masks.",
+    "Calcium oxidation" to "Eye Protection: Use goggles to prevent dust from entering eyes.\n" +
+            "Gloves: Wear gloves to avoid skin contact with reactive materials.",
+    "Obsidian" to " Sharp Edges: Obsidian can be sharp; handle with care to avoid cuts.\n" +
+            "Proper Disposal: Dispose of any broken pieces safely to avoid injury.",
+    "Lava cooling" to "Heat Protection: Use appropriate protective gear to handle hot materials.\n" +
+            "Avoid Direct Contact: Lava remains hot for a long time; avoid touching.",
+    "Fire melting ice" to "Water Management: Be mindful of the water produced from melting ice to prevent slips.\n" +
+            "Fire Safety: Control the fire to prevent it from spreading."
+)
+val colorToEmoji = mapOf(
+    Color(0xff00FFFF) to "❄️", // Frozen Water
+    Color(0xff4B0082) to "🪨", // Obsidian
+    Color(0xff808080) to "🪨", // Rock
+    Color.Blue to "💧", // Water
+    Color.Red to "🔥", // Fire
+    Color(0xff81a5ba) to "💨", // Steam
+    Color.Cyan to "❄️", // Ice
+    Color(0xffFF4500) to "🌋", // Lava
+    Color(0xffA9A9A9) to "🌫️", // Ash
+    Color(0xff61340b) to "🌍", // Earth
+    Color(0xff8B4513) to "🪵", // Wood
+    Color(0xffB0C4DE) to "🔩", // Metal
+    Color(0xff2F4F4F) to "💣", // Gunpowder
+    Color(0xffF0FFFF) to "💧", // Hydrogen
+    Color(0xffADD8E6) to "💨", // Oxygen
+    Color(0xffFFA500) to "💥", // Explosion
+    Color(0xff8B0000) to "🔥", // Burning Wood
+    Color(0xffB22222) to "🔥", // Melted Metal
+    Color(0xff6E4B3A) to "🌍", // Mud
+    Color(0xffe3b8e2) to "🧪", // Calcium Hydroxide
+    Color(0xff81a5bb) to "💨", // Gas
+    Color(0xff81a5bc) to "💨", // Steam
+    Color(0xffF0FFFE) to "💧", // Water
+    Color(0xffF0FFFD) to "💧", // Water
+    Color(0xff80808f) to "💧" // Water
 )

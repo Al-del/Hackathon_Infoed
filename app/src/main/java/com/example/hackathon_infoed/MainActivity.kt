@@ -48,6 +48,8 @@ import kotlinx.coroutines.delay
 import androidx.lifecycle.ViewModel
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.State
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalContext
 
 class TemperatureViewModel : ViewModel() {
@@ -81,7 +83,7 @@ class MainActivity : ComponentActivity() {
             selectedColorr = remember { mutableStateOf(Color.Transparent) }
             var elementPositions by remember { mutableStateOf(mutableListOf<ColoredPoint>()) }
 
-            Box(modifier = Modifier.fillMaxSize()) {
+            Box(modifier = Modifier.fillMaxSize().background(Color.Red)) {
                 DrawingCanvas(
                     elementPositions,
                     selectedColor = selectedColorr.value,
@@ -156,7 +158,8 @@ data class ColoredPoint(
     val creationTime: Long? = null,
     var collided: Boolean = false,
     var vx: Float = 0f, // Velocity in x direction
-    var vy: Float = 0f  // Velocity in y direction
+    var vy: Float = 0f,  // Velocity in y direction
+    var emoji: String? = colorToEmoji[color]
 )
 fun detectCollision(points: List<ColoredPoint>): List<Pair<ColoredPoint, ColoredPoint>> {
     val collisions = mutableListOf<Pair<ColoredPoint, ColoredPoint>>()
@@ -207,7 +210,6 @@ fun DrawingCanvas(
     onPathChanged: (List<ColoredPoint>) -> Unit,
     temperatureViewModel: TemperatureViewModel,
     sensorViewModel: SensorViewModel
-
 ) {
     val currentPositions = remember { mutableStateOf(elementPositions) }
     val culi = selectedColorr
@@ -240,6 +242,7 @@ fun DrawingCanvas(
                     change.consume()
                     val newPoint = ColoredPoint(change.position.x, change.position.y, selectedColor, behaviors[selectedColor] ?: { it })
                     newPoint.color = culi.value
+                    newPoint.emoji = colorToEmoji[culi.value]
                     newPoint.behavior = behaviors[culi.value] ?: { it }
                     currentPositions.value = currentPositions.value + newPoint
                     onPathChanged(currentPositions.value)
@@ -248,8 +251,36 @@ fun DrawingCanvas(
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             currentPositions.value.forEach { point ->
+                when (point.color) {
+                    Color.Blue, Color.Red, Color(0xffFF4500), Color(0xff696969), Color(0xffADD8E6), Color(0xffF0FFFF), Color(0xffA9A9A9), Color(0xff2F4F4F), Color(0xff81a5ba),
+                    Color(0xffA9A9A9), Color(0xffe3b8e2), Color(0xff81a5bb), Color(0xff6E4B3A), Color(0xffA0522D), Color(0xff8B0000), Color(0xffB22222), Color(0xffADD8E6),
+                    Color(0xffFFA500), Color(0xff8B4513), Color(0xff81a5bc), Color(0xffADD8E6), Color(0xffF0FFFE), Color(0xffF0FFFD) -> {
+                        drawCircle(color = point.color, radius = 20f, center = Offset(point.x, point.y))
+                        drawContext.canvas.nativeCanvas.drawText(
+                            point.emoji ?: "SLAY PCT",
+                            point.x,
+                            point.y,
+                            android.graphics.Paint().apply {
+                                textAlign = android.graphics.Paint.Align.CENTER
+                                textSize = 40f
+                            }
+                        )
+                    }
+                    Color.Cyan, Color(0xff61340b), Color(0xff808080), Color(0xff8B4513), Color(0xffB0C4DE), Color(0xff36454F), Color(0xff4B0082), Color(0xff00FFFF) -> {
+                        drawRect(color = point.color, topLeft = Offset(point.x - 20f, point.y - 20f), size = Size(40f, 40f))
+                        //Draw the emoji in the center of the rectangle
 
-                drawCircle(color = point.color, radius = 20f, center = Offset(point.x, point.y))
+                        drawContext.canvas.nativeCanvas.drawText(
+                            point.emoji ?: "SLAY AGAING",
+                            point.x,
+                            point.y,
+                            android.graphics.Paint().apply {
+                                textAlign = android.graphics.Paint.Align.CENTER
+                                textSize = 40f
+                            }
+                        )
+                    }
+                }
             }
         }
     }
