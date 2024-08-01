@@ -12,6 +12,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -55,33 +57,50 @@ class TemperatureViewModel : ViewModel() {
     fun decrementTemperature() {
         _temperature.value--
     }
+
+    // Public function to get the current temperature
+    fun getTemperature(): Int {
+        return _temperature.value
+    }
 }
 data class Element(val name: String, val color: Color)
 var selectedColorr : MutableState<Color> = mutableStateOf(Color.Transparent)
-
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val temperatureViewModel: TemperatureViewModel by viewModels()
+        val sensorViewModel: SensorViewModel by viewModels()
 
         setContent {
-            Hackathon_InfoedTheme {
-                selectedColorr = remember { mutableStateOf(Color.Transparent) }
-                var elementPositions by remember { mutableStateOf(mutableListOf<ColoredPoint>()) }
+            val showDialog = remember { mutableStateOf(false) }
+            selectedColorr = remember { mutableStateOf(Color.Transparent) }
+            var elementPositions by remember { mutableStateOf(mutableListOf<ColoredPoint>()) }
 
-                Box(modifier = Modifier.fillMaxSize()) {
-                    DrawingCanvas(elementPositions, selectedColor = selectedColorr.value) { newPositions ->
-                        elementPositions = newPositions.toMutableList()
-                    }
-                    ElementList(elements = elements) { color ->
-                        selectedColorr.value = color
-                    }
-                    TemperatureControl(
-                        temperature = temperatureViewModel.temperature.value,
-                        onIncrement = { temperatureViewModel.incrementTemperature() },
-                        onDecrement = { temperatureViewModel.decrementTemperature() }
-                    )
+            Box(modifier = Modifier.fillMaxSize()) {
+                DrawingCanvas(
+                    elementPositions,
+                    selectedColor = selectedColorr.value,
+                    onPathChanged = { newPositions -> elementPositions = newPositions.toMutableList() },
+                    temperatureViewModel = temperatureViewModel,
+                    sensorViewModel = sensorViewModel
+                )
+                ElementList(elements = elements) { color ->
+                    selectedColorr.value = color
+                }
+                TemperatureControl(
+                    temperature = temperatureViewModel.temperature.value,
+                    onIncrement = { temperatureViewModel.incrementTemperature() },
+                    onDecrement = { temperatureViewModel.decrementTemperature() }
+                )
+                Button(
+                    onClick = { showDialog.value = true },
+                    modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)
+                ) {
+                    Text("Show Reactions Achieved")
+                }
+                ReactionsAchievedDialog(showDialog.value, reactions_achieved) {
+                    showDialog.value = false
                 }
             }
         }
@@ -126,12 +145,14 @@ fun ElementList(elements: List<Element>, onElementSelected: (Color) -> Unit) {
     }
 }
 data class ColoredPoint(
-    val x: Float,
-    val y: Float,
+    var x: Float,
+    var y: Float,
     var color: Color,
     var behavior: (ColoredPoint) -> ColoredPoint? = { it },
     val creationTime: Long? = null,
-    var collided: Boolean = false
+    var collided: Boolean = false,
+    var vx: Float = 0f, // Velocity in x direction
+    var vy: Float = 0f  // Velocity in y direction
 )
 fun detectCollision(points: List<ColoredPoint>): List<Pair<ColoredPoint, ColoredPoint>> {
     val collisions = mutableListOf<Pair<ColoredPoint, ColoredPoint>>()
@@ -148,7 +169,10 @@ fun detectCollision(points: List<ColoredPoint>): List<Pair<ColoredPoint, Colored
     }
     return collisions
 }
-fun handleCollision(collisions: List<Pair<ColoredPoint, ColoredPoint>>): List<ColoredPoint> {
+fun handleCollision(
+    collisions: List<Pair<ColoredPoint, ColoredPoint>>,
+    temperatureViewModel: TemperatureViewModel
+): List<ColoredPoint> {
     val updatedPoints = mutableListOf<ColoredPoint>()
     val pointsToErase = mutableSetOf<ColoredPoint>()
 
@@ -156,7 +180,8 @@ fun handleCollision(collisions: List<Pair<ColoredPoint, ColoredPoint>>): List<Co
         val collisionFunction = collisionFunctions[Pair(point1.color, point2.color)]
             ?: collisionFunctions[Pair(point2.color, point1.color)]
             ?: return@forEach
-        val (newPoint, shouldErase) = collisionFunction(point1, point2)
+
+        val (newPoint, shouldErase) = collisionFunction(point1, point2, temperatureViewModel)
         if (newPoint != null) {
             updatedPoints.add(newPoint)
         }
@@ -166,6 +191,7 @@ fun handleCollision(collisions: List<Pair<ColoredPoint, ColoredPoint>>): List<Co
             pointsToErase.add(point1)
             pointsToErase.add(point2)
         }
+
     }
 
     return updatedPoints.filterNot { it in pointsToErase || it.collided }
@@ -174,7 +200,10 @@ fun handleCollision(collisions: List<Pair<ColoredPoint, ColoredPoint>>): List<Co
 fun DrawingCanvas(
     elementPositions: List<ColoredPoint>,
     selectedColor: Color,
-    onPathChanged: (List<ColoredPoint>) -> Unit
+    onPathChanged: (List<ColoredPoint>) -> Unit,
+    temperatureViewModel: TemperatureViewModel,
+    sensorViewModel: SensorViewModel
+
 ) {
     val currentPositions = remember { mutableStateOf(elementPositions) }
     val culi = selectedColorr
@@ -185,7 +214,7 @@ fun DrawingCanvas(
 
             // Detect and handle collisions
             val collisions = detectCollision(currentPositions.value)
-            val collisionResults = handleCollision(collisions)
+            val collisionResults = handleCollision(collisions, temperatureViewModel)
             val newPositions = currentPositions.value.mapNotNull { point ->
                 if (collisionResults.any { it.x == point.x && it.y == point.y }) {
                     collisionResults.first { it.x == point.x && it.y == point.y }
@@ -206,7 +235,6 @@ fun DrawingCanvas(
                 detectDragGestures { change, _ ->
                     change.consume()
                     val newPoint = ColoredPoint(change.position.x, change.position.y, selectedColor, behaviors[selectedColor] ?: { it })
-                    Log.d("kilo", "selectedColor: $culi")
                     newPoint.color = culi.value
                     newPoint.behavior = behaviors[culi.value] ?: { it }
                     currentPositions.value = currentPositions.value + newPoint
@@ -216,9 +244,8 @@ fun DrawingCanvas(
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             currentPositions.value.forEach { point ->
-                Log.d("DrawingCanvas", "Drawing point at (${point.x}, ${point.y})")
-                Log.d("DrawingCanvas", "Color: ${point.color}")
-                drawCircle(color = point.color, radius = 10f, center = Offset(point.x, point.y))
+
+                drawCircle(color = point.color, radius = 20f, center = Offset(point.x, point.y))
             }
         }
     }
@@ -245,5 +272,42 @@ fun TemperatureControl(temperature: Int, onIncrement: () -> Unit, onDecrement: (
                 Text(text = "+")
             }
         }
+    }
+}
+// Define the SteamCreationDialog composable function
+@Composable
+fun SteamCreationDialog(showDialog: Boolean, onDismiss: () -> Unit) {
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text(text = "Steam Created") },
+            text = { Text(text = "Water and Fire have combined to create Steam!") },
+            confirmButton = {
+                Button(onClick = onDismiss) {
+                    Text("OK")
+                }
+            }
+        )
+    }
+}
+@Composable
+fun ReactionsAchievedDialog(showDialog: Boolean, reactions: List<String>, onDismiss: () -> Unit) {
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text(text = "Reactions Achieved") },
+            text = {
+                Column {
+                    reactions.forEach { reaction ->
+                        Text(text = reaction)
+                    }
+                }
+            },
+            confirmButton = {
+                Button(onClick = onDismiss) {
+                    Text("OK")
+                }
+            }
+        )
     }
 }
