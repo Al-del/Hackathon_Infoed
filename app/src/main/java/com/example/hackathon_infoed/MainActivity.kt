@@ -15,16 +15,22 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredWidth
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -51,6 +57,7 @@ import androidx.compose.runtime.State
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.sp
 
 class TemperatureViewModel : ViewModel() {
     private val _temperature = mutableStateOf(20)
@@ -82,8 +89,8 @@ class MainActivity : ComponentActivity() {
             val showDialog = remember { mutableStateOf(false) }
             selectedColorr = remember { mutableStateOf(Color.Transparent) }
             var elementPositions by remember { mutableStateOf(mutableListOf<ColoredPoint>()) }
-
-            Box(modifier = Modifier.fillMaxSize().background(Color.Red)) {
+            Spacer(modifier = Modifier.height(25.dp))
+            Box(modifier = Modifier.fillMaxSize().background(Color(0xFFfaf9f5))) {
                 DrawingCanvas(
                     elementPositions,
                     selectedColor = selectedColorr.value,
@@ -94,20 +101,32 @@ class MainActivity : ComponentActivity() {
                 ElementList(elements = elements) { color ->
                     selectedColorr.value = color
                 }
+                Spacer(modifier = Modifier.size(8.dp))
                 TemperatureControl(
                     temperature = temperatureViewModel.temperature.value,
                     onIncrement = { temperatureViewModel.incrementTemperature() },
                     onDecrement = { temperatureViewModel.decrementTemperature() }
                 )
+                Spacer(modifier = Modifier.size(8.dp))
+
                 Button(
                     onClick = { showDialog.value = true },
-                    modifier = Modifier.align(Alignment.TopEnd).padding(16.dp).requiredHeight(60.dp).requiredWidth(180.dp)
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .offset(y = 30.dp)
+                        .requiredHeight(50.dp)
+                        .requiredWidth(150.dp),
                 ) {
-                    Text("Show Reactions Achieved")
+                    Text("Show Reactions", fontSize = 14.sp, color = Color.White)
                 }
+                Spacer(modifier = Modifier.size(8.dp))
+
                 ReactionsAchievedDialog(showDialog.value, reactions_achieved) {
                     showDialog.value = false
                 }
+                Spacer(modifier = Modifier.size(8.dp))
+
             }
         }
     }
@@ -144,7 +163,7 @@ fun ElementList(elements: List<Element>, onElementSelected: (Color) -> Unit) {
                             onElementSelected(element.color)
                         }
                 ) {
-                    Text(text = element.name, color = Color.White)
+                    Text(text = element.name, color = Color.White, fontSize = 24.sp)
                 }
             }
         }
@@ -257,7 +276,7 @@ fun DrawingCanvas(
                     Color(0xffFFA500), Color(0xff8B4513), Color(0xff81a5bc), Color(0xffADD8E6), Color(0xffF0FFFE), Color(0xffF0FFFD) -> {
                         drawCircle(color = point.color, radius = 20f, center = Offset(point.x, point.y))
                         drawContext.canvas.nativeCanvas.drawText(
-                            point.emoji ?: "SLAY PCT",
+                            point.emoji ?: "",
                             point.x,
                             point.y,
                             android.graphics.Paint().apply {
@@ -271,7 +290,7 @@ fun DrawingCanvas(
                         //Draw the emoji in the center of the rectangle
 
                         drawContext.canvas.nativeCanvas.drawText(
-                            point.emoji ?: "SLAY AGAING",
+                            point.emoji ?:"",
                             point.x,
                             point.y,
                             android.graphics.Paint().apply {
@@ -290,25 +309,39 @@ fun TemperatureControl(temperature: Int, onIncrement: () -> Unit, onDecrement: (
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp)
+            .offset(y = 30.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
+            horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            Button(onClick = onDecrement) {
-                Text(text = "-")
+            Button(
+                onClick = onDecrement,
+                modifier = Modifier.size(50.dp),
+            ) {
+                Text(text = "-", fontSize = 25.sp, color = Color.White, modifier = Modifier.offset(-5.dp))
             }
+            Spacer(modifier = Modifier.width(16.dp))
             Text(
                 text = "$temperature°C",
-                modifier = Modifier.padding(horizontal = 16.dp)
+                modifier = Modifier.padding(horizontal = 16.dp) .height(50.dp).width(100.dp).offset(y=10.dp),
+                fontSize = 24.sp
+
             )
-            Button(onClick = onIncrement) {
-                Text(text = "+")
+            Spacer(modifier = Modifier.width(16.dp))
+            Button(
+                onClick = onIncrement,
+                modifier = Modifier.size(50.dp).offset(x= -65.dp),
+
+            ) {
+                Text(text = "+", color = Color.White,
+                    modifier = Modifier.offset(x=-5.dp), fontSize = 25.sp)
             }
         }
     }
 }
+
 // Define the SteamCreationDialog composable function
 
 @Composable
@@ -325,7 +358,7 @@ fun ReactionsAchievedDialog(showDialog: Boolean, reactions: List<String>, onDism
                     reactions.forEach { reaction ->
                         Text(text = reaction, modifier = Modifier.padding(4.dp).clickable {
                             val intent = Intent(context, show_data::class.java)
-                            intent.putExtra("title", reaction)
+                           intent.putExtra("title", reaction)
                             context.startActivity(intent)
                         })
                     }
